@@ -1,0 +1,452 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flyaway Control</title>
+
+<link rel="stylesheet"	href="css/jquery.mobile-1.2.1.min.css" />
+
+<script src="js/jquery-1.8.3.min.js"></script>
+<script	src="js/jquery.mobile-1.2.1.min.js"></script>
+<script src="js/index.js"></script>
+<script src="js/XMLHandler.js"></script>
+<script src="js/jquery.jsonp.js"></script>
+<script src="js/modernizr-latest.js"></script>
+
+<style>
+
+
+body {background:#edeff0;}
+
+p img {
+	width: 100%;
+}
+
+.azElPol {
+	padding: 10px;
+	font-size: large;
+	background: white;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+}
+
+
+.goNormal { }
+.goActive { border:1px solid green;}
+
+.goNormalx  {height:50px;}
+
+.lockBg {background:green;color:white !important;}
+
+</style>
+
+<script type="text/javascript">
+
+function request2(handlerFunction, command)
+{
+$.jsonp({
+
+     url: "http://"+$("#txtIP").val()+'/cgi-bin/flyaway.cgi?' + command,
+     callbackParameter: 'callback',
+	 dataType: 'jsonp',
+	 crossDomain: true,
+     success: handlerFunction,
+     error: function(){ alert("error");}
+ });
+	
+}
+
+function request(handlerFunction, command)
+{
+  $.get("http://"+$("#txtIP").val()+'/cgi-bin/flyaway.cgi?' + command, {},handlerFunction);
+ /* var xmlhttp= new XMLHttpRequest();
+var url="http://"+$("#txtIP").val()+'/cgi-bin/flyaway.cgi?' + command;
+xmlhttp.open("GET",url,false);
+xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+xmlhttp.send();*/
+
+}
+	
+$( document ).bind( "mobileinit", function() {
+    // Make your jQuery Mobile framework configuration changes here!
+    $.mobile.allowCrossDomainPages = true;
+});
+	
+function processSatList(xml)
+{
+  xmlDoc = $.parseXML( xml ),
+  $xml = $( xmlDoc ),
+  $title = $xml.find( "title" );
+}
+
+function afterSelectSatellite()
+{
+  alert("a");
+}
+
+function startReading() {
+
+	  //t = setTimeout("processMessageQueue()", document.getElementById("txtReadSpeed").value);
+		t = setTimeout("getStatus()", 200);
+}
+
+function stopReading() {
+	clearTimeout(t);
+	stopReading();
+}
+
+var Status = {};
+
+function getStatus() {
+	
+		var fs = new FlyawayStatus();
+		fs.getStatus();
+		
+		$("#txtAz").html(Status.az_angle);
+		$("#txtEl").html(Status.el_angle);
+		$("#txtPol").html(Status.pol_angle);
+				
+		$("#txtsignal_level").html(Status.signal_level);
+
+		if(Status.carrier_lock=="true")
+			{$("#txtcarrier_lock").html("Locked");$("#lockBg").addClass("lockBg");}
+		else { $("#txtcarrier_lock").html(".");$("#lockBg").removeClass("lockBg"); }
+		
+		/*$("#txtaz_cw_limit").val(Status.az_cw_limit);
+		$("#txtaz_ccw_limit").val(Status.az_ccw_limit);
+		$("#txtpol_cw_limit").val(Status.pol_cw_limit);
+		$("#txtpol_ccw_limit").val(Status.pol_ccw_limit);
+		$("#txtdriver_unit_current_az_pwm").val(Status.driver_unit_current_az_pwm);
+		$("#txtdriver_unit_current_el_pwm").val(Status.driver_unit_current_el_pwm);
+		$("#txtdriver_unit_current_pol_pwm").val(Status.driver_unit_current_pol_pwm);*/
+
+		//$("#txtMessage").val("Direction In Progress:"+Status.is_satellite_direction_in_progress);
+		$("#txtMessage").val(Status.auto_pointing_message);
+		//$("#txtis_antenna_in_search_area").val(Status.is_antenna_in_search_area);
+		
+		/*$("#txtdirectingHelp").val(Status.directingHelp);
+		$("#txtaz_direction_instruction").val(Status.az_direction_instruction);
+		$("#txtel_direction_instruction").val(Status.el_direction_instruction);
+		$("#txtpol_direction_instruction").val(Status.pol_direction_instruction);
+		$("#txtaz_motor_drive_direction").val(Status.az_motor_drive_direction);
+		$("#txtel_motor_drive_direction").val(Status.el_motor_drive_direction);
+		$("#txtpol_motor_drive_direction").val(Status.pol_motor_drive_direction);
+
+		$("#txtaz_cw_limit").val(Status.az_cw_limit);
+		$("#txtaz_ccw_limit").val(Status.az_ccw_limit);
+		$("#txtpol_cw_limit").val(Status.pol_cw_limit);
+		$("#txtpol_ccw_limit").val(Status.pol_ccw_limit);
+		$("#txtel_up_limit").val(Status.el_up_limit);
+		$("#txtel_down_limit").val(Status.el_down_limit);
+		$("#txtaz0_limit").val(Status.az0_limit);
+
+		$("#txtaz_angle1").val(Status.az_angle);
+		$("#txtel_angle1").val(Status.el_angle);
+		$("#txtpol_angle1").val(Status.pol_angle);*/
+		
+		//MOTOR CONTROL SECTION
+		var azDir = Status.az_motor_drive_direction;
+		var elDir = Status.el_motor_drive_direction;
+		var polDir = Status.pol_motor_drive_direction;
+		
+		//console.log(azDir+","+elDir+","+polDir);
+
+		if(azDir == "AZ_STOP") {
+			$("#goLeft").removeClass("goActive");
+			$("#goRight").removeClass("goActive");
+			
+			/*$("#goLeft").removeClass("goActive").addClass("goNormal");
+			$("#goRight").removeClass("goActive").addClass("goNormal");*/
+		};
+		
+		if(azDir == "AZ_CW") {
+			$("#goRight").addClass("goActive");
+			/*$("#goLeft").removeClass("goActive").addClass("goNormal");
+			$("#goRight").removeClass("goNormal").addClass("goActive");*/
+		};		
+		if(azDir == "AZ_CCW") {
+			$("#goLeft").addClass("goActive");
+			
+			/*$("#goLeft").removeClass("goNormal").addClass("goActive");
+			$("#goRight").removeClass("goActive").addClass("goNormal");*/
+		};
+		if(elDir == "EL_STOP") {
+			$("#goUp").removeClass("goActive");
+			$("#goDown").removeClass("goActive");
+		};
+		
+		if(elDir == "EL_UP") {
+			$("#goUp").addClass("goActive");
+		};
+		
+		if(elDir == "EL_DOWN") {
+			$("#goDown").addClass("goActive");
+		};
+		
+		if(polDir == "POL_STOP") {
+			$("#goCW").removeClass("goActive");
+			$("#goCCW").removeClass("goActive");
+		};
+
+		if(polDir == "POL_CW") {
+			$("#goCW").addClass("goActive");
+		};
+		
+		if(polDir == "POL_CCW") {
+			$("#goCCW").addClass("goActive");
+		};
+
+		startReading();
+	}
+
+	function saveIP()
+	{
+	            localStorage.setItem(localStorageKey, $("#txtIP").val());
+                showStoreValue();
+	  //setCookie("IP",$("#txtIP").val(),300);
+	  alert("Saved IP");
+	}
+	
+</script>
+
+
+</head>
+
+<body>
+    <div data-role="page" id="introPage">
+     <div data-role="header" data-theme="b">
+			<h1>Flyaway Control</h1>
+			<a href="#about" data-theme="f" data-transition="slide" title="Home"><img src="images/SVSLogo.png"/></a>
+		</div>
+		
+		<img src="images/FlyawayMot.jpg" style="width:100%;"/>
+		
+		<div data-role="content">
+		<label for="text-basic" class="ui-input-text">Flyaway IP</label>
+		<input type="text" id="txtIP" value="192.168.1.94"/>
+		<a id="lnkSetIP" href="#0" data-role="button" onclick="saveIP();">Save IP</a>
+		
+		<a id="lnkOpenAntennaControl" href="#main" data-role="button" data-transition="slide" onclick="getSatellites(); startReading();">Open Antenna Control</a>
+		<p></p>
+		<p style="font-size:small;">Release:20.12.2013</p>
+		
+		</div>
+		
+		
+	</div>
+	
+	
+	<div data-role="page" id="main" style="background:#edeff0;">
+
+		<div data-role="header" data-theme="b">
+			<h1>Flyaway Control</h1>
+
+			<a href="#about" data-theme="f" data-transition="slide" title="Home"><img src="images/SVSLogo.png"/></a>
+
+		</div>
+		<!-- /header -->
+
+		<div data-role="content">
+
+			<div data-role="controlgroup" data-type="horizontal" style="text-align:center;">
+			<a href="" data-role="button"><span style="font-size:large;">Signal Level</span></a>
+			<a href="" data-role="button"><span id="txtsignal_level" style="font-size:large;color:green;">0</span></a>
+			<a href="" data-role="button" id="lockBg"><span id="txtcarrier_lock" style="font-size:large;">.</span></a>
+			
+	<!-- <div class="ui-block-a"><div>Signal Level</div></div>
+    <div class="ui-block-b"><div style="text-align:center;"><span id="txtsignal_level" style="font-size:x-large;">0</span></div></div>
+    <div class="ui-block-c" id="lockBg"><div  style="text-align:center;padding:10px;"><span id="txtcarrier_lock" style="font-size:x-large;"></span></div></div> -->
+			
+			</div>
+
+			<input type="text" id="txtMessage" />
+			<div class="ui-grid-a">
+				<div class="ui-block-a" >
+					<div class="ui-bar ui-bar-c"
+						style="height: 20px; text-align: center;">Az.</div>
+				</div>
+				<div class="ui-block-b">
+					<div class="ui-bar ui-bar-c"
+						style="height: 20px; text-align: center;">El.</div>
+				</div>
+				<div class="ui-block-c"  style="display:none;">
+					<div class="ui-bar ui-bar-c"
+						style="height: 20px; text-align: center;">Pol.</div>
+				</div>
+				<div class="ui-block-a">
+					<div class="ui-bar ui-bar-d"
+						style="height: 60px; text-align: center;">
+						<div id="txtAz" class="azElPol">0.0</div>
+					</div>
+				</div>
+				<div class="ui-block-b">
+					<div class="ui-bar ui-bar-d"
+						style="height: 60px; text-align: center;">
+						<div id="txtEl" class="azElPol">0.0</div>
+					</div>
+				</div>
+				<div class="ui-block-c" style="display:none;">
+					<div class="ui-bar ui-bar-d"
+						style="height: 60px; text-align: center;">
+						<div id="txtPol" class="azElPol">0.0</div>
+					</div>
+				</div>
+			</div>
+				
+			
+			<!-- /grid-c -->
+
+    <!--<div data-role="fieldcontain">
+      <label for="txtCurrentSatellite">Current Satellite</label>
+      <input type="text" id="txtCurrentSatellite" />
+    </div>-->
+	
+			
+			
+		   <div class="ui-grid-b">
+           <div class="ui-block-a"><a id="lnkSelectSatellite" href="#pageSelectSatellite" data-role="button" data-transition="slide">Go To Satellite</a> </div>
+	       <div class="ui-block-b"><a id="2" href="#0" data-role="button" onclick="stopDirectingToSatellite();">Stop</a> </div>
+	       <div class="ui-block-b"><a id="3" href="#0" data-role="button" onclick="stow();">Stow</a></div>     
+           </div>
+			
+			<p>
+
+<div class="ui-grid-a">
+    <div class="ui-block-a"><div class="goNormalx" id="goRight"  data-role="button" style="background:url(images/Arrow-full-right-32.png) no-repeat center;"></div></div>
+	<div class="ui-block-b"><div class="goNormalx" id="goUp"  data-role="button" style="background:url(images/Arrow-full-up-32.png) no-repeat center;"></div></div>
+	<div class="ui-block-b"  style="display:none;"><div class="goNormalx" id="goCW"  data-role="button" style="background:url(images/Arrow-Circle-Right-UI-32.png) no-repeat center;"></div></div>
+	<div class="ui-block-b"><div class="goNormalx" id="goLeft"  data-role="button" style="background:url(images/Arrow-full-left-32.png) no-repeat center;"></div></div>
+	<div class="ui-block-b"><div class="goNormalx" id="goDown"  data-role="button" style="background:url(images/Arrow-full-down-32.png) no-repeat center;"></div></div>
+	<div class="ui-block-b"  style="display:none;"><div class="goNormalx" id="goCCW"  data-role="button" style="background:url(images/Arrow-Circle-Left-UI-32.png) no-repeat center;"></div></div>	   
+</div>
+				
+			</p>
+			
+				<p>
+				<a id="2" href="#introPage" data-role="button" data-transition="slide" >Go To Main Page</a>
+			</p>
+			
+		</div>
+		<!-- /content -->
+
+		<div data-role="footer" data-theme="a">
+			<h4>© SVS Satellite Systems</h4>
+		</div>
+		<!-- /footer -->
+
+	</div>
+	<!-- /page -->
+
+	<!-- Start of second page: #two -->
+	<div data-role="page" id="pageSelectSatellite">
+		<div data-role="header">
+			<h1>Satellite List</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext"
+				data-direction="reverse" data-transition="slide">Home</a>
+		</div>
+		<!-- /header -->
+		<div data-role="content" id="aboutusContent">
+
+
+			<ul id="satList" data-role="listview" data-filter="true"
+				data-filter-placeholder="Search Satellites..." data-inset="true">
+			</ul>
+
+		</div>
+		<!-- /content -->
+		<div data-role="footer">
+			<h4>© SVS Satellite Systems</h4>
+		</div>
+		<!-- /footer -->
+	</div>
+	<!-- /page two -->
+
+
+	<!-- Start of second page: #about -->
+	<div data-role="page" id="about">
+		<div data-role="header">
+			<h1>About</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext"
+				data-direction="reverse" data-transition="slide">Home</a>
+		</div>
+		<!-- /header -->
+		<div data-role="content" id="solutionsContent">
+		
+		
+		<div data-role="panel" id="left-panel" data-theme="c">
+		<p><strong>Flyaway Mobile Control V1.0</strong></p>
+						<p><img src="images/FlyawayMot.jpg"></p>
+						<p style="text-align:center;"><a href="http://www.devnet.com.tr" target="_blank">www.devnet.com.tr</a>  <a href="http://www.svstelekom.com.tr" target="_blank">www.svstelekom.com.tr</a></p>
+						<p><strong>Developed by Devnet</strong></p>
+						<p>Devnet, a subsidiary of SVS Telekom,  is a research and development company which mainly focuses on the develepment  of broadcasting devices like antenna controllers, switchers, high power amplifier  controllers, network management systems that monitors and controls the devices on an uplink line.</p><p>
+We have interaction with all of the required  technologies even for different platforms  for an electromechanic product during our research and development  process through our hardware and software team. </p>
+<p><img src="images/SFM200_Driver_Board_v2_trns.png"/></p>
+<p> We have experience on the following specific technological fields.</p>
+<ul>
+<li>Mechanical Control</li>
+<li>RF Communication</li>
+<li>Auto Pointing Systems</li>
+<li>Tracking Systems</li>
+<li>Sensor Systems</li>
+
+</ul>
+<p>
+We design and test electronic boards, mechanical systems, research, find and test new hardware equipments for our new generation products, develop our own testing devices for our main products. We use embedded Linux and Windows for our hardware, develop low-level software drivers for our hardware on both platforms, develop PC control softwares again both on Linux and Windows and also web based control softwares.</p><p>
+Some of our products are supported by TUBITAK,  government’s national science and technology institution.  </p>
+
+						
+						
+				
+				</div>
+		
+		</div>
+		<!-- /content -->
+		
+		<div data-role="footer">
+			<h4>© SVS Satellite Systems</h4>
+		</div>
+		<!-- /footer -->
+		
+	</div>
+
+
+
+	<!-- Start of second page: #solutions -->
+	<div data-role="page" id="solutions2">
+		<div data-role="header">
+			<h1>Solutions</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext"
+				data-direction="reverse" data-transition="slide">Home</a>
+		</div>
+		<!-- /header -->
+		<div data-role="content">solutions.</div>
+		<!-- /content -->
+	</div>
+
+
+	<!-- Start of second page: #blank -->
+	<div data-role="page" id="contact">
+		<div data-role="header">
+			<h1>Contact Information</h1>
+			<a href="#main" data-icon="home" data-iconpos="notext"
+				data-direction="reverse" data-transition="slide">Home</a>
+		</div>
+		<!-- /header -->
+		<div data-role="content" id="contactInfoContent">
+			contact.
+			<p>
+				<a href="#main" data-direction="reverse" data-role="button"
+					data-theme="b">Back to page "one"</a>
+			</p>
+		</div>
+		<!-- /content -->
+	</div>
+
+
+
+</body>
+</html>
