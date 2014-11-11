@@ -10,10 +10,10 @@ var localStorageKey = "deviceIP";
 function showStoreValue() {
             var item = localStorage.getItem(localStorageKey);
             if (item == null) {
-                item = 'Nothing in store';
+                item = 'no IP found';
             }
             else if (item.length === 0) {
-                item = 'Store contains empty value';
+                item = 'IP is empty';
             }
             $('.storeItem').text(item);
         }
